@@ -1,50 +1,99 @@
-name: Playwright Tests
+name: Playwright Daily E2E Test
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
   workflow_dispatch:
+  push:
+    branches: [ main, master ]
+    paths-ignore:
+      - "README.md"
+      - "docs/latest_playwright.mp4"
+      - "docs/latest_playwright.gif"
+      - "docs/latest_playwright.png"
+  schedule:
+    # Runs every day at 16:00 UTC = 8:00 AM PST
+    - cron: "0 16 * * *"
+
+permissions:
+  contents: write
 
 jobs:
-  test:
+  playwright-test:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ Checkout repo
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # 2️⃣ Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
 
-      - name: Install dependencies
+      # 3️⃣ Install dependencies
+      - name: Install NPM dependencies
         run: npm install
 
-      - name: Fix Playwright binary permissions
-        run: chmod +x ./node_modules/.bin/playwright
-
+      # 4️⃣ Install Playwright system dependencies + browsers
       - name: Install Playwright system dependencies
-        run: ./node_modules/.bin/playwright install-deps
+        run: npx playwright install-deps
 
       - name: Install Playwright browsers
-        run: ./node_modules/.bin/playwright install
+        run: npx playwright install
 
+      # 5️⃣ Run Playwright tests (login test)
       - name: Run Playwright tests
-        run: ./node_modules/.bin/playwright test
+        run: npx playwright test --reporter=html
 
-      - name: Upload Playwright HTML Report
+      # 6️⃣ Install ffmpeg so we can create a GIF
+      - name: Install ffmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      # 7️⃣ Extract the video + convert to GIF
+      - name: Extract Playwright video and generate GIF
+        run: |
+          mkdir -p docs
+
+          VIDEO=$(find test-results -type f -name "*.webm" -o -name "*.mp4" | head -n 1 || true)
+
+          if [ -z "$VIDEO" ]; then
+            echo "No video found, skipping."
+            exit 0
+          fi
+
+          echo "Found video: $VIDEO"
+          cp "$VIDEO" docs/latest_playwright.mp4
+
+          ffmpeg -y -i "$VIDEO" -vf "fps=12,scale=480:-1:flags=lanczos" docs/latest_playwright.gif
+
+      # 8️⃣ Update README from template
+      - name: Update README
+        run: |
+          cp ci/readme_template.md README.md
+
+          TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+
+          sed -i "s|__TIMESTAMP__|$TIMESTAMP|g" README.md
+
+          git config user.email "github-actions@github.com"
+          git config user.name "GitHub Actions"
+
+          git add README.md docs/latest_playwright.mp4 docs/latest_playwright.gif || echo "Nothing to add"
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
+          git commit -m "Update README with latest Playwright login test [skip ci]"
+          git push || true
+
+      # 9️⃣ Upload Playwright artifacts (HTML report)
+      - name: Upload Playwright Report
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
-          path: playwright-report
-          retention-days: 7
-
-      - name: Upload Screenshots
-        uses: actions/upload-artifact@v4
-        with:
-          name: screenshots
-          path: playwright-report/data/
-          retention-days: 7
+          path: playwright-report/
