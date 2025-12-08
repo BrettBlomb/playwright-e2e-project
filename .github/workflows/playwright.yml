@@ -20,10 +20,13 @@ jobs:
         with:
           node-version: 18
 
-      - name: Install NPM dependencies
+      - name: Install dependencies
         run: npm install
 
-      - name: Install system dependencies for Playwright
+      - name: Fix Playwright binary permissions
+        run: chmod +x ./node_modules/.bin/playwright
+
+      - name: Install Playwright system dependencies
         run: ./node_modules/.bin/playwright install-deps
 
       - name: Install Playwright browsers
@@ -32,7 +35,7 @@ jobs:
       - name: Run Playwright tests
         run: ./node_modules/.bin/playwright test
 
-      - name: Upload Playwright HTML report
+      - name: Upload Playwright HTML Report
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
