@@ -7,7 +7,7 @@ module.exports = defineConfig({
   retries: 1,
   use: {
     headless: true,
-    screenshot: 'only-on-failure',
+    screenshot: 'on',
     video: 'retain-on-failure'
   },
   reporter: [["html", { outputFolder: "playwright-report" }]],
