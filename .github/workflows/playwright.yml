@@ -41,3 +41,10 @@ jobs:
           name: playwright-report
           path: playwright-report
           retention-days: 7
+
+      - name: Upload Screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: playwright-report/data/
+          retention-days: 7
