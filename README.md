@@ -6,7 +6,7 @@ The workflow runs daily using GitHub Actions, generates a fresh video and GIF of
 ---
 
 ## 🚀 Latest Daily Test Run  
-**Last Updated:** 2025-12-08 18:13:07 UTC
+**Last Updated:** 2025-12-08 18:15:10 UTC
 
 Below is the most recent automated execution of the login test:
 
@@ -59,21 +59,6 @@ This creates a living, continuously updated visualization of the test suite’s 
 - **Scheduled automation (cron jobs)**
 
 ---
-
-## 📂 Repository Structure
-
-├── tests/
-│ ├── login.spec.js
-│ └── products.spec.js
-├── docs/
-│ ├── latest_playwright.mp4
-│ ├── latest_playwright.gif
-│ └── .gitkeep
-├── ci/
-│ └── readme_template.md
-├── playwright.config.js
-├── package.json
-└── .github/workflows/playwright.yml
 
 
 ---
