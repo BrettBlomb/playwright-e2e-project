@@ -60,21 +60,6 @@ This creates a living, continuously updated visualization of the test suite’s 
 
 ---
 
-## 📂 Repository Structure
-
-├── tests/
-│ ├── login.spec.js
-│ └── products.spec.js
-├── docs/
-│ ├── latest_playwright.mp4
-│ ├── latest_playwright.gif
-│ └── .gitkeep
-├── ci/
-│ └── readme_template.md
-├── playwright.config.js
-├── package.json
-└── .github/workflows/playwright.yml
-
 
 ---
 
