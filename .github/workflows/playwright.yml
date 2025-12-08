@@ -85,7 +85,7 @@ jobs:
           done
 
           echo "Combining GIFs..."
-          gifsicle --delay=8 --loop temp_gifs/part_*.gif > docs/latest_playwright.gif
+          gifsicle --delay=40 --loop temp_gifs/part_*.gif > docs/latest_playwright.gif
 
           # Save first video for download
           FIRST_VIDEO=$(echo "$VIDEOS" | head -n 1)
