@@ -8,8 +8,9 @@ on:
       - "README.md"
       - "docs/latest_playwright.mp4"
       - "docs/latest_playwright.gif"
+      - "docs/*.png"
   schedule:
-    # Runs every day at 16:00 UTC = 8:00 AM PST
+    # Runs every day at 16:00 UTC (8 AM PST)
     - cron: "0 16 * * *"
 
 permissions:
@@ -34,46 +35,63 @@ jobs:
       - name: Install NPM dependencies
         run: npm install
 
-      # 4️⃣ Fix Playwright binary permissions (CRITICAL FIX)
+      # 4️⃣ Make Playwright binary executable (CRITICAL FIX)
       - name: Fix Playwright binary permissions
         run: chmod +x ./node_modules/.bin/playwright
 
-      # 5️⃣ Install Playwright system dependencies
+      # 5️⃣ Install system dependencies
       - name: Install Playwright system dependencies
         run: ./node_modules/.bin/playwright install-deps
 
-      # 6️⃣ Install Playwright browsers
+      # 6️⃣ Install browsers Playwright needs
       - name: Install Playwright browsers
         run: ./node_modules/.bin/playwright install
 
-      # 7️⃣ Run Playwright tests
+      # 7️⃣ Run tests & generate HTML report
       - name: Run Playwright tests
         run: ./node_modules/.bin/playwright test --reporter=html
 
-      # 8️⃣ Install ffmpeg so we can generate GIFs
-      - name: Install ffmpeg
+      # 8️⃣ Install ffmpeg + gifsicle (GIF combination)
+      - name: Install media tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y ffmpeg
+          sudo apt-get install -y ffmpeg gifsicle
 
-      # 9️⃣ Extract newest video and convert to GIF
-      - name: Extract Playwright video and generate GIF
+      # 9️⃣ Extract ALL Playwright videos → GIFs → combine into one GIF
+      - name: Generate combined GIF from all test videos
         run: |
           mkdir -p docs
+          mkdir -p temp_gifs
 
-          VIDEO=$(find test-results -type f -name "*.webm" -o -name "*.mp4" | head -n 1 || true)
+          # Find every Playwright video
+          VIDEOS=$(find test-results -type f \( -name "*.webm" -o -name "*.mp4" \) | sort || true)
 
-          if [ -z "$VIDEO" ]; then
-            echo "No video found, skipping."
+          if [ -z "$VIDEOS" ]; then
+            echo "No videos found. Skipping GIF generation."
             exit 0
           fi
 
-          echo "Found video: $VIDEO"
-          cp "$VIDEO" docs/latest_playwright.mp4
+          echo "Videos found:"
+          echo "$VIDEOS"
 
-          ffmpeg -y -i "$VIDEO" -vf "fps=12,scale=480:-1:flags=lanczos" docs/latest_playwright.gif
+          # Convert each video to a GIF
+          index=0
+          for VIDEO in $VIDEOS; do
+            echo "Converting $VIDEO"
+            ffmpeg -y -i "$VIDEO" \
+              -vf "fps=12,scale=480:-1:flags=lanczos" \
+              temp_gifs/part_$index.gif
+            index=$((index+1))
+          done
 
-      # 🔟 Update README using template
+          echo "Combining GIFs..."
+          gifsicle --delay=8 --loop temp_gifs/part_*.gif > docs/latest_playwright.gif
+
+          # Save first video for download
+          FIRST_VIDEO=$(echo "$VIDEOS" | head -n 1)
+          cp "$FIRST_VIDEO" docs/latest_playwright.mp4
+
+      # 🔟 Update README from template
       - name: Update README
         run: |
           cp ci/readme_template.md README.md
@@ -92,10 +110,10 @@ jobs:
             exit 0
           fi
 
-          git commit -m "Update README with latest Playwright login test [skip ci]"
+          git commit -m "Update README with latest Playwright combined test video [skip ci]"
           git push || true
 
-      # 1️⃣1️⃣ Upload Playwright HTML Report
+      # 1️⃣1️⃣ Upload HTML report for debugging
       - name: Upload Playwright Report
         uses: actions/upload-artifact@v4
         with:
