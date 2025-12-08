@@ -8,7 +8,6 @@ on:
       - "README.md"
       - "docs/latest_playwright.mp4"
       - "docs/latest_playwright.gif"
-      - "docs/latest_playwright.png"
   schedule:
     # Runs every day at 16:00 UTC = 8:00 AM PST
     - cron: "0 16 * * *"
@@ -35,24 +34,29 @@ jobs:
       - name: Install NPM dependencies
         run: npm install
 
-      # 4️⃣ Install Playwright system dependencies + browsers
+      # 4️⃣ Fix Playwright binary permissions (CRITICAL FIX)
+      - name: Fix Playwright binary permissions
+        run: chmod +x ./node_modules/.bin/playwright
+
+      # 5️⃣ Install Playwright system dependencies
       - name: Install Playwright system dependencies
-        run: npx playwright install-deps
+        run: ./node_modules/.bin/playwright install-deps
 
+      # 6️⃣ Install Playwright browsers
       - name: Install Playwright browsers
-        run: npx playwright install
+        run: ./node_modules/.bin/playwright install
 
-      # 5️⃣ Run Playwright tests (login test)
+      # 7️⃣ Run Playwright tests
       - name: Run Playwright tests
-        run: npx playwright test --reporter=html
+        run: ./node_modules/.bin/playwright test --reporter=html
 
-      # 6️⃣ Install ffmpeg so we can create a GIF
+      # 8️⃣ Install ffmpeg so we can generate GIFs
       - name: Install ffmpeg
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg
 
-      # 7️⃣ Extract the video + convert to GIF
+      # 9️⃣ Extract newest video and convert to GIF
       - name: Extract Playwright video and generate GIF
         run: |
           mkdir -p docs
@@ -69,7 +73,7 @@ jobs:
 
           ffmpeg -y -i "$VIDEO" -vf "fps=12,scale=480:-1:flags=lanczos" docs/latest_playwright.gif
 
-      # 8️⃣ Update README from template
+      # 🔟 Update README using template
       - name: Update README
         run: |
           cp ci/readme_template.md README.md
@@ -91,7 +95,7 @@ jobs:
           git commit -m "Update README with latest Playwright login test [skip ci]"
           git push || true
 
-      # 9️⃣ Upload Playwright artifacts (HTML report)
+      # 1️⃣1️⃣ Upload Playwright HTML Report
       - name: Upload Playwright Report
         uses: actions/upload-artifact@v4
         with:
