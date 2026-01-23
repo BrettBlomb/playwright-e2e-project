@@ -1,11 +1,14 @@
 const { test, expect } = require('@playwright/test');
+const { LoginPage } = require('../pages/LoginPage');
 
-test('user can log in successfully', async ({ page }) => {
-  await page.goto('https://www.saucedemo.com/');
+test('user can log in successfully (better locators + POM)', async ({ page }) => {
+  const login = new LoginPage(page);
 
-  await page.fill('[data-test="username"]', 'standard_user');
-  await page.fill('[data-test="password"]', 'secret_sauce');
-  await page.click('[data-test="login-button"]');
+  await login.goto();
+  await login.login('standard_user', 'secret_sauce');
 
-  await expect(page).toHaveURL(/inventory/);
+  await expect(page).toHaveURL(/inventory\.html$/);
+
+  // Stronger than just URL: assert an inventory page signal
+  await expect(page.locator('[data-test="inventory-list"]')).toBeVisible();
 });
